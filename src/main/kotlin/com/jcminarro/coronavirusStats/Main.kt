@@ -45,9 +45,10 @@ fun main(args: Array<String>) {
 }
 
 fun write(days: List<String>, data: List<CountryData>) {
-    File("confirmed.html").writeText(createHtml("Confirmed", days, data) { it.confirmed })
-    File("death.html").writeText(createHtml("Death", days, data) { it.death })
-    File("recovered.html").writeText(createHtml("Recovered", days, data) { it.recovered })
+    val distDir = File("dist").apply { mkdir() }
+    File(distDir, "confirmed.html").writeText(createHtml("Confirmed", days, data) { it.confirmed })
+    File(distDir, "death.html").writeText(createHtml("Death", days, data) { it.death })
+    File(distDir, "recovered.html").writeText(createHtml("Recovered", days, data) { it.recovered })
 }
 
 fun createHtml(title: String, headers: List<String>, data: List<CountryData>, filterData: (Stats) -> Int) =

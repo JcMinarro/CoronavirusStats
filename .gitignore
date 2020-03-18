@@ -134,4 +134,6 @@ gradle-app.setting
 ### Gradle Patch ###
 **/build/
 
+# HTML Files dirctory
+dist/
 # End of https://www.gitignore.io/api/gradle,kotlin,intellij
