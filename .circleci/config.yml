@@ -1,0 +1,72 @@
+defaults: &defaults
+  working_directory: ~/repo
+  docker:
+    - image: circleci/openjdk:8-jdk
+  environment:
+    TZ: Europe/Madrid
+    JVM_OPTS: -Xmx3200m
+    GRADLE_OPTS: '-Dorg.gradle.daemon=false'
+    _JAVA_OPTIONS: "-Xms256m -Xmx1024m -XX:MaxPermSize=350m"
+
+configure_environment: &configure_environment
+  name: Configure Environment
+  command: |
+    find . -type f -name "*.gradle" -or -name "*.gradle.kts" | sort | xargs md5sum > cache.key
+    git config --global user.email "$CIRCLE_USERNAME@users.noreply.github.com"
+    git config --global user.name "$CIRCLE_USERNAME"
+    mkdir -p ~/.gradle
+    touch ~/.gradle/gradle.properties
+    echo "org.gradle.daemon=false" > ~/.gradle/gradle.properties
+    echo "org.gradle.jvmargs=-Xmx1024m -XX:MaxPermSize=350m -XX:+HeapDumpOnOutOfMemoryError" >> ~/.gradle/gradle.properties
+    echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
+download_gradle_dependencies: &download_gradle_dependencies
+  name: Download dependencies
+  command: ./gradlew dependencies
+restore_cache: &restore_cache
+  keys:
+    - cache-{{ checksum "cache.key" }}-{{ .Branch }}-{{ .Revision }}
+    - cache-{{ checksum "cache.key" }}-{{ .Branch }}
+    - cache-{{ checksum "cache.key" }}
+    - cache-
+save_cache: &save_cache
+  paths:
+    - ~/.gradle/caches
+    - ~/.gradle/wrapper
+  key: cache-{{ checksum "cache.key" }}-{{ .Branch }}-{{ .Revision }}-{{ epoch }}
+  when: on_success
+
+version: 2
+jobs:
+  run:
+    <<: *defaults
+    steps:
+      - checkout
+      - run:
+          name: Pull Submodules
+          command: |
+            git submodule init
+            git submodule update --remote
+      - run: *configure_environment
+      - restore_cache: *restore_cache
+      - run: *download_gradle_dependencies
+      - save_cache: *save_cache
+      - run:
+          name: Create html files
+          command: ./gradlew run --args='COVID-19/csse_covid_19_data/csse_covid_19_daily_reports/'
+      - store_artifacts:
+          path: dist/
+          destination: dist
+      - persist_to_workspace:
+          root: .
+          paths:
+            - dist
+
+workflows:
+  version: 2
+  run:
+    jobs:
+      - run:
+          filters:
+            branches:
+              only:
+                - master
