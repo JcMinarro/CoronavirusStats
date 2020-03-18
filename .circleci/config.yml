@@ -35,7 +35,9 @@ save_cache: &save_cache
   key: cache-{{ checksum "cache.key" }}-{{ .Branch }}-{{ .Revision }}-{{ epoch }}
   when: on_success
 
-version: 2
+version: 2.1
+orbs:
+  firebase-deploy: azdevs/firebase-deploy@1.0.0
 jobs:
   run:
     <<: *defaults
@@ -61,11 +63,28 @@ jobs:
           paths:
             - dist
 
+  deploy:
+    docker:
+      - image: 'circleci/node:lts'
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - firebase-deploy/deploy:
+          token: $FIREBASE_TOKEN
+
 workflows:
-  version: 2
-  run:
+  version: 2.1
+  run_and_deploy:
     jobs:
       - run:
+          filters:
+            branches:
+              only:
+                - master
+      - deploy:
+          requires:
+            - run
           filters:
             branches:
               only:
