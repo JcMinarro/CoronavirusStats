@@ -8,7 +8,7 @@ fun main(args: Array<String>) {
     val rootDir = File(args[0])
 
     val data = rootDir.listFiles { file: File? -> FILE_NAME_PATTERN.containsMatchIn(file?.name ?: "") }
-        .associateBy { it.name.replace(".csv", "").split("-").let { "${it[2]}${it[0]}${it[1]}" } }
+        .associateBy { it.name.replace(".csv", "").split("-").let { "'${it[0]}/${it[1]}'" } }
         .entries
         .sortedBy { it.key }
         .map {
