@@ -5,18 +5,19 @@ import java.io.File
 
 private val FILE_NAME_PATTERN = "[0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9]\\.csv".toRegex()
 fun main(args: Array<String>) {
-    val rootDir = File(args[0])
+    val casesFile = File(args[0])
 
-    val data = rootDir.listFiles { file: File? -> FILE_NAME_PATTERN.containsMatchIn(file?.name ?: "") }
-        .associateBy { it.name.replace(".csv", "").split("-").let { "'${it[0]}/${it[1]}'" } }
+    val data = csvReader().readAllWithHeader(casesFile)
+        .groupBy { it["Last_Update"]?.split("/")?.let { "'${it[0].padStart(2, '0')}/${it[1].padStart(2, '0')}'" } ?: "" }
         .entries
         .sortedBy { it.key }
+        .filterNot { it.key.isBlank() }
         .map {
-            it.key to csvReader().readAllWithHeader(it.value)
-                .groupBy { it["Country/Region"] }
+            it.key to it.value
+                .groupBy { it["Country_Region"] }
                 .map {
-                    it.key to it.value.fold(Stats(0, 0, 0)) { acc, map ->
-                        acc + Stats(map["Confirmed"]?.toIntOrNull() ?: 0, map["Deaths"]?.toIntOrNull() ?: 0, map["Recovered"]?.toIntOrNull() ?: 0)
+                    it.key to it.value.fold(Stats(0, 0)) { acc, map ->
+                        acc + Stats(map["Confirmed"]?.toIntOrNull() ?: 0, map["Deaths"]?.toIntOrNull() ?: 0)
                     }
                 }
                 .filter { it.first in  Country.values().map { it.displayName }}
@@ -33,9 +34,9 @@ fun main(args: Array<String>) {
             countriesStats.map {
                 it.firstOrNull { it.first == country.displayName }
                     ?.second
-                    ?: Stats(0, 0, 0)
+                    ?: Stats(0, 0)
             }
-                .fold(Stats(0,0,0) to listOf<Stats>()) { acc, stats ->
+                .fold(Stats(0,0) to listOf<Stats>()) { acc, stats ->
                     (stats to (acc.second + (stats - acc.first)))
                 }.second
         )
@@ -48,7 +49,6 @@ fun write(days: List<String>, data: List<CountryData>) {
     val distDir = File("dist").apply { mkdir() }
     File(distDir, "confirmed.html").writeText(createHtml("Confirmed", days, data) { it.confirmed })
     File(distDir, "death.html").writeText(createHtml("Death", days, data) { it.death })
-    File(distDir, "recovered.html").writeText(createHtml("Recovered", days, data) { it.recovered })
 }
 
 fun createHtml(title: String, headers: List<String>, data: List<CountryData>, filterData: (Stats) -> Int) =
@@ -115,9 +115,9 @@ fun createHtml(title: String, headers: List<String>, data: List<CountryData>, fi
         """.trimIndent()
 
 data class CountryData(val name: String, val color: String, val data: List<Stats>)
-data class Stats(val confirmed: Int, val death: Int, val recovered: Int) {
-    operator fun plus(stats: Stats) = Stats(confirmed + stats.confirmed, death + stats.death, recovered + stats.recovered)
-    operator fun minus(stats: Stats) = Stats(confirmed - stats.confirmed, death - stats.death, recovered - stats.recovered)
+data class Stats(val confirmed: Int, val death: Int) {
+    operator fun plus(stats: Stats) = Stats(confirmed + stats.confirmed, death + stats.death)
+    operator fun minus(stats: Stats) = Stats(confirmed - stats.confirmed, death - stats.death)
 }
 
 enum class Country(val displayName: String,

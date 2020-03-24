@@ -54,7 +54,7 @@ jobs:
       - save_cache: *save_cache
       - run:
           name: Create html files
-          command: ./gradlew run --args='COVID-19/csse_covid_19_data/csse_covid_19_daily_reports/'
+          command: ./gradlew run --args='COVID-19/data/cases_time.csv' 
       - store_artifacts:
           path: dist/
           destination: dist
