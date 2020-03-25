@@ -22,6 +22,7 @@ fun main(args: Array<String>) {
                 }
                 .filter { it.first in  Country.values().map { it.displayName }}
         }
+        .filter { it.second.any { it.second.confirmed > 100 } }
 
     val days = data.map { it.first }
     val countriesStats = data.map { it.second }
