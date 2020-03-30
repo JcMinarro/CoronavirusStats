@@ -128,5 +128,6 @@ enum class Country(val displayName: String,
     FRANCE("France", "#88FEE9"),
     SPAIN("Spain", "#A301FA"),
     ITALY("Italy", "#008332"),
-    UK("United Kingdom", "#0C01FA")
+    UK("United Kingdom", "#0C01FA"),
+    NETHERLANDS("Netherlands", "#FFA500")
 }
