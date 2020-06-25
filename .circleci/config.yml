@@ -76,13 +76,6 @@ jobs:
 workflows:
   version: 2.1
   run_and_deploy:
-    triggers:
-      - schedule:
-          cron: "0 0,3,6,9,12,15,18,21 * * *"
-          filters:
-            branches:
-              only:
-                - master
     jobs:
       - run:
           filters:
